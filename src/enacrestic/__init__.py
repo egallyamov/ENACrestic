@@ -590,17 +590,11 @@ class QTEnacRestic(QApplication):
         self.logger = logger
         self.state = state
 
-        QTimer.singleShot(
-            2000,
-            self._start_when_systray_available
-        )
-
-    def _start_when_systray_available(self):
         self.tray_icon = QSystemTrayIcon(
             QIcon(ICONS['program_just_launched']),
             parent=self
         )
-        self.tray_icon.show()
+        self._show_systray_when_available()
 
         menu = QMenu()
         # Entry to display informations to the user
@@ -624,6 +618,16 @@ class QTEnacRestic(QApplication):
         self.timer = QTimer()
         self.timer.timeout.connect(self.restic_backup.run)
         self.timer.start(self.state.backup_every_n_minutes * 60_000)
+
+    def _show_systray_when_available(self):
+        if QSystemTrayIcon.isSystemTrayAvailable():
+            self.logger.write('System tray available -> show !')
+            self.tray_icon.show()
+        else:
+            self.logger.write('System tray not available -> try again in 1 sec.')
+            QTimer.singleShot(
+                1000, self._show_systray_when_available
+            )
 
 
 def main():
